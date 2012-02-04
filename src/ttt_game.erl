@@ -22,12 +22,18 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
+-type piece() :: 'o' | 'x'.
+-type square() :: piece() | 'u'.
+-type board() :: [[square(),...],...].
+
 start_link() ->
     gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+-spec print_board(board()) -> ok.
 print_board(Board) ->
     io:fwrite(board_to_iolist(Board)).
 
+-spec board_to_iolist(board()) -> iolist().
 board_to_iolist(Board) ->
     BoardChars = lists:flatmap(fun(Row) -> lists:map(fun square_to_char/1, Row) end, Board),
     io_lib:format("~c|~c|~c~n"
@@ -36,6 +42,7 @@ board_to_iolist(Board) ->
                   "-+-+-+~n"
                   "~c|~c|~c~n", BoardChars).
 
+-spec is_valid_step(board(), board()) -> boolean().
 is_valid_step(OldBoard, NewBoard) ->
     Delta = lists:zipwith(fun(OldRow, NewRow) ->
                 lists:zipwith(fun(OldSquare, NewSquare) ->
@@ -83,6 +90,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
+-spec square_to_char(square()) -> char().
 square_to_char(o) -> $O;
 square_to_char(x) -> $X;
 square_to_char(u) -> $ .
