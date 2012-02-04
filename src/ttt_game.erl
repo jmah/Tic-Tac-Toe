@@ -26,15 +26,15 @@ start_link() ->
     gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 print_board(Board) ->
-	io:fwrite(board_to_iolist(Board)).
+    io:fwrite(board_to_iolist(Board)).
 
 board_to_iolist(Board) ->
-	BoardChars = lists:flatmap(fun(Row) -> lists:map(fun board_elem_to_char/1, Row) end, Board),
-	io_lib:format("~c|~c|~c~n"
-		          "-+-+-~n"
-				  "~c|~c|~c~n"
-				  "-+-+-+~n"
-				  "~c|~c|~c~n", BoardChars).
+    BoardChars = lists:flatmap(fun(Row) -> lists:map(fun square_to_char/1, Row) end, Board),
+    io_lib:format("~c|~c|~c~n"
+                  "-+-+-~n"
+                  "~c|~c|~c~n"
+                  "-+-+-+~n"
+                  "~c|~c|~c~n", BoardChars).
 
 %% ------------------------------------------------------------------
 %% gen_fsm Function Definitions
@@ -70,6 +70,6 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-board_elem_to_char(o) -> $O;
-board_elem_to_char(x) -> $X;
-board_elem_to_char(u) -> $ .
+square_to_char(o) -> $O;
+square_to_char(x) -> $X;
+square_to_char(u) -> $ .
