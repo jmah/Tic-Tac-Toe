@@ -8,7 +8,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, print_board/1, board_to_iolist/1]).
+-export([start_link/0, print_board/1, board_to_iolist/1, is_valid_step/2]).
 
 %% ------------------------------------------------------------------
 %% gen_fsm Function Exports
@@ -35,6 +35,19 @@ board_to_iolist(Board) ->
                   "~c|~c|~c~n"
                   "-+-+-+~n"
                   "~c|~c|~c~n", BoardChars).
+
+is_valid_step(OldBoard, NewBoard) ->
+    Delta = lists:zipwith(fun(OldRow, NewRow) ->
+                lists:zipwith(fun(OldSquare, NewSquare) ->
+                            case {OldSquare, NewSquare} of
+                                {u, o} -> 1;
+                                {u, x} -> 1;
+                                {A, A} -> 0;
+                                _      -> 0
+                            end
+                    end, OldRow, NewRow)
+        end, OldBoard, NewBoard),
+    lists:sum(lists:flatten(Delta)) == 1.
 
 %% ------------------------------------------------------------------
 %% gen_fsm Function Definitions
