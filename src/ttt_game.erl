@@ -59,13 +59,12 @@ board_to_iolist(Board) ->
 %% gen_fsm Function Definitions
 %% ------------------------------------------------------------------
 
--record(player, { pid :: pid(), ref :: reference(), piece :: piece() }).
+-record(player, { pid :: pid(), ref :: reference(), monitor :: reference(), piece :: piece() }).
 -record(st, { players :: [#player{}], board=[[u,u,u],[u,u,u],[u,u,u]] :: board() }).
 
 init({{OPid,ORef},{XPid,XRef}}) ->
-    % TODO: Monitor players
-    OPlayer = #player{pid=OPid, ref=ORef, piece=o},
-    XPlayer = #player{pid=XPid, ref=XRef, piece=x},
+    OPlayer = #player{pid=OPid, ref=ORef, monitor=monitor(process, OPid), piece=o},
+    XPlayer = #player{pid=XPid, ref=XRef, monitor=monitor(process, XPid), piece=x},
     NewState = #st{players=[OPlayer, XPlayer]},
     notify_player(OPlayer, {your_move, OPlayer#player.piece, NewState#st.board}),
     {ok, NewState}.
@@ -110,10 +109,14 @@ handle_call(_Req, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+handle_info({'DOWN', _Monitor, process, _, _}, State) ->
+    {stop, player_died, State};
+
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    lists:map(fun(#player{monitor=Monitor}) -> demonitor(Monitor, [flush]) end, State#st.players),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
