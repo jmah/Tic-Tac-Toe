@@ -213,5 +213,5 @@ diag_winner(_) -> [].
 
 -spec notify_player(#player{}, any()) -> ok.
 notify_player(#player{pid=Pid}, Msg) ->
-    Pid ! Msg,
+    Pid ! {ttt_game, self(), Msg},
     ok.
