@@ -76,7 +76,7 @@ handle_call({make_move, Ref, NewBoard}, From, State) ->
     [ThisPlayer, NextPlayer] = State#st.players,
 
     % Verify ref and that the move was legal
-    case validate_move(ThisPlayer, State#st.board, Ref, NewBoard) of
+    try validate_move(ThisPlayer, State#st.board, Ref, NewBoard) of
         ok ->
             NewState = State#st{players=[NextPlayer, ThisPlayer], board=NewBoard},
             % Reply happens here!
@@ -97,10 +97,9 @@ handle_call({make_move, Ref, NewBoard}, From, State) ->
                 ongoing ->
                     notify_player(NextPlayer, {your_move, NextPlayer#player.piece, NewBoard}),
                     {noreply, NewState}
-            end;
-
-        {error, _}=Error ->
-            {reply, Error, State}
+            end
+    catch
+        throw:{error, _}=Error -> {reply, Error, State}
     end;
 
 handle_call(_Req, _From, State) ->
@@ -149,21 +148,22 @@ is_valid_square(x) -> true;
 is_valid_square(u) -> true;
 is_valid_square(_) -> false.
 
--spec validate_move(#player{}, board(), reference(), board()) -> 'ok' | {'error', any()}.
+-spec validate_move(#player{}, board(), reference(), board()) -> 'ok'.
 validate_move(Player, OldBoard, Ref, NewBoard) ->
     #player{ref = PlayerRef, piece = PlayerPiece} = Player,
     if
-        Ref /= PlayerRef -> {error, invalid_ref};
-        true ->
-            case is_valid_board(NewBoard) of
-                false -> {error, invalid_board};
-                _ ->
-                    case pieces_added(OldBoard, NewBoard) of
-                        [PlayerPiece] -> ok;
-                        _ -> {error, illegal_move}
-                    end
-            end
-    end.
+        Ref /= PlayerRef -> throw({error, invalid_ref});
+        true -> continue
+    end,
+    case is_valid_board(NewBoard) of
+        false -> throw({error, invalid_board});
+        _ -> continue
+    end,
+    case pieces_added(OldBoard, NewBoard) of
+        [PlayerPiece] -> continue;
+        _ -> throw({error, illegal_move})
+    end,
+    ok.
 
 -spec pieces_added(board(), board()) -> [piece()].
 pieces_added(OldBoard, NewBoard) ->
